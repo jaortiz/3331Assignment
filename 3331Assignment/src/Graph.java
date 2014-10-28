@@ -148,7 +148,7 @@ public class Graph {
 		}
 	
 	
-	//Method to create a connections
+	//Method to create a connections for CIRCUIT
 	public void createConnection(String startNode, String endNode, double start, double duration, String networkScheme,String routingScheme, int packetRate) {
 		if(routingScheme.equalsIgnoreCase("SHP")) {
 			ArrayList<String> path = SHP(startNode,endNode);
@@ -218,6 +218,77 @@ public class Graph {
 			//}
 		}
 	}
+	
+	//overloading createConnection for PACKET SWITCHING
+	public void createConnection(String startNode, String endNode, double start, double duration, String networkScheme,String routingScheme) {
+		if(routingScheme.equalsIgnoreCase("SHP")) {
+			ArrayList<String> path = SHP(startNode,endNode);
+			
+			numPackets++;	//only have to increment since each connection in packet switching is one packet
+			
+			for(int i = 0;i < path.size() - 1;i++) {
+				if(adjList.get(path.get(i)).getArc(path.get(i + 1)).isFull()) {
+					return;
+				}
+			}
+	
+			for(int i = 0;i < path.size() - 1;i++) {
+				adjList.get(path.get(i)).getArc(path.get(i + 1)).incrementTraffic(); 
+				adjList.get(path.get(i + 1)).getArc(path.get(i)).incrementTraffic();
+			}
+			
+			numSuccessPackets++; //only have to increment since each connection in packet switching is one packet
+			connections.add(new Connection(startNode, endNode, start, duration,numPackets, path));	
+			totalConnections ++;	//incrementing total successful connections
+			totalHops += path.size() - 1;
+			totalPropDelay  += getDelay(path);
+			
+		} else if(routingScheme.equalsIgnoreCase("SDP")) {
+			ArrayList<String> path = SDP(startNode,endNode);
+			
+			numPackets++;	//only have to increment since each connection in packet switching is one packet
+			
+			for(int i = 0;i < path.size() - 1;i++) {
+				if(adjList.get(path.get(i)).getArc(path.get(i + 1)).isFull()) {
+					return;
+				}
+			}
+	
+			for(int i = 0;i < path.size() - 1;i++) {
+				adjList.get(path.get(i)).getArc(path.get(i + 1)).incrementTraffic(); 
+				adjList.get(path.get(i + 1)).getArc(path.get(i)).incrementTraffic();
+			}
+			
+			numSuccessPackets++; //only have to increment since each connection in packet switching is one packet
+			connections.add(new Connection(startNode, endNode, start, duration,numPackets, path));	
+			totalConnections ++;	//incrementing total successful connections
+			totalHops += path.size() - 1;
+			totalPropDelay  += getDelay(path);
+			
+		} else if(routingScheme.equalsIgnoreCase("LLP")) {
+			ArrayList<String> path = LLP(startNode,endNode);
+			numPackets++;	//only have to increment since each connection in packet switching is one packet
+				
+				for(int i = 0;i < path.size() - 1;i++) {
+					if(adjList.get(path.get(i)).getArc(path.get(i + 1)).isFull()) {
+						return;
+					}
+				}
+				
+				for(int i = 0;i < path.size() - 1;i++) {
+					adjList.get(path.get(i)).getArc(path.get(i + 1)).incrementTraffic(); 
+					adjList.get(path.get(i + 1)).getArc(path.get(i)).incrementTraffic();
+				}
+				
+				numSuccessPackets++; //only have to increment since each connection in packet switching is one packet
+				connections.add(new Connection(startNode, endNode, start, duration,numPackets, path));	
+				totalConnections ++;	//incrementing total successful connections
+				totalHops += path.size() - 1;
+				totalPropDelay  += getDelay(path);
+			//}
+		}
+	}
+	
 
 	public void print() {
 		

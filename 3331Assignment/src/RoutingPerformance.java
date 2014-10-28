@@ -1,5 +1,6 @@
 import java.io.*;
 import java.util.ArrayList;
+import java.util.PriorityQueue;
 import java.util.Scanner;
 
 public class RoutingPerformance {
@@ -93,15 +94,63 @@ public class RoutingPerformance {
 				//System.out.println("connection from " + node1  +  node2);
 			}
 		} else if(networkScheme.equalsIgnoreCase("PACKET")) {
+			double packetIncrem = 1.0/packetRate;	//number to increment each packet by
+			PriorityQueue<Connection> tempConnections = new PriorityQueue<Connection>();
+
+			//adding all the packets to a priority queue based on start time
+			while(workSC.hasNext()) {
+				
+				line = workSC.nextLine();
+				work = line.split("\\s+");
+				node1 = work[1];
+				node2 = work[2];
+				start = Double.parseDouble(work[0]);
+				duration = Double.parseDouble(work[3]);
+				
+				int numPackets = (int) Math.ceil((duration * packetRate));	//number of packets to be send in this request
+				
+				for(int i = 0; i < numPackets;i++ ) {
+					if(i == (numPackets - 1)) {	//for last packet, end time = start + duration
+						tempConnections.add(new Connection(node1, node2, (start + i*packetIncrem), (start + duration)));
+						virtualCircuitRequests++;
+					} else {
+						tempConnections.add(new Connection(node1, node2, (start + i*packetIncrem), ((i+1)*packetIncrem + start)));
+						virtualCircuitRequests++;
+					}
+					
+				}
+			}
 			
+			//keep looping until all the packet connections are all sent
+			while(!tempConnections.isEmpty()) {
+				//if the connection with the earliest end time is less than or equal to the connection we want to add with the earliest start time
+				while(!g.getConnections().isEmpty() && g.getConnections().peek().getEndTime() <=  tempConnections.peek().getStartTime()){	
+					g.updateConnections();
+				}
+				
+				String startNode = tempConnections.peek().getStartNode();
+				String endNode = tempConnections.peek().getEndNode();
+				double  startTime = tempConnections.peek().getStartTime();
+				double tempDuration = tempConnections.peek().getEndTime() - tempConnections.peek().getStartTime();
+				tempConnections.poll();//remove connection we are about to send from tempQueue
+				g.createConnection(startNode,endNode,startTime,tempDuration,networkScheme,routingScheme);
+				//createConnection(String startNode, String endNode, double start, double duration, String networkScheme,String routingScheme)
+				
+			}
+			
+			while(!g.getConnections().isEmpty()) {	//clear leftover connections, happens since some connections might be going even after
+				g.updateConnections();				//the last packet is sent
+			}
 		}
+		
+		
 		//Printing out statistics
 		System.out.println("total number of virtual circuit requests: " + virtualCircuitRequests);
 		System.out.println("total number of packets: " + g.getNumPackets());
 		System.out.println("total number of successsfully routed packets: " + g.getNumSuccessPackets());
 		System.out.printf("percentage of successfully routed packets: %.2f\n" , (double)((g.getNumSuccessPackets() * 1.0/g.getNumPackets()))*100);
 		System.out.println("number of blocked packets: " + (g.getNumPackets() - g.getNumSuccessPackets()));
-		System.out.printf("percentage of successfully routed packets: %.2f\n" , (double)((1 - g.getNumSuccessPackets() * 1.0/g.getNumPackets()))*100);
+		System.out.printf("percentage of blocked packets: %.2f\n" , (double)((1 - g.getNumSuccessPackets() * 1.0/g.getNumPackets()))*100);
 		System.out.printf("average number of hops per circuit: %.2f\n" , (double)(g.getTotalHops()*1.0/g.getTotalConnections()));
 		System.out.printf("average cumulative propagation delay per circuit: %.2f\n" , (double)(g.getTotalPropDelay()*1.0/g.getTotalConnections()));
 
