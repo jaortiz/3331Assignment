@@ -34,4 +34,17 @@ public class Node {
 			}
 		}
 	}
+	
+	//get node arc
+	public Arc getArc(String to) {
+		Arc arc = null;
+		for(int i =0;i < arcs.size(); i++) {
+			if(arcs.get(i).getName().equalsIgnoreCase(to)) {
+				arc = arcs.get(i);
+				break;
+			}
+		}
+		return arc;
+		
+	}
 }

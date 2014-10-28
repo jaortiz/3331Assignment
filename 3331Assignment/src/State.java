@@ -5,6 +5,7 @@ public class State implements Comparable<State>{
 	
 	ArrayList<String> path;
 	int cost;
+	double load = 0.0;
 	
 	//Initial Constructor
 	public State(String initial) {
@@ -30,6 +31,14 @@ public class State implements Comparable<State>{
 		
 	}
 	
+	
+	//overloading constructor for LLP, takes in a double for the load
+	public State(ArrayList<String> oldPath, String newNode, double leastLoad) {
+		path = new ArrayList<String>(oldPath);
+		path.add(newNode);
+		load = leastLoad;
+	}
+	
 	//Method to get state path
 	public ArrayList<String> getPath() {
 		return path;
@@ -47,10 +56,22 @@ public class State implements Comparable<State>{
 		return cost;
 	}
 
+	//Method to get the current load of a link in path
+	public double getLoad() {
+		return load;
+	}
 	
 	//Comparator used for priority queue
 	@Override
 	public int compareTo(State o) {
-		return cost - o.getCost();
+		
+		if(load != 0.0) {	//used to compare doubles for LLP 
+			if(load < o.getLoad()) return -1;
+			if(load > o.getLoad()) return 1;
+			return 0;
+		}
+		
+		return cost - o.getCost();	//used for SDP and SHP
+		
 	}
 }
