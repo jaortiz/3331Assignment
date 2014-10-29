@@ -7,7 +7,11 @@ public class State implements Comparable<State>{
 	int cost;
 	double load = 0.0;
 	
-	//Initial Constructor
+	/**
+	 * Default constructor
+	 * 
+	 * @param initial node 
+	 */
 	public State(String initial) {
 		path = new ArrayList<String>();
 		path.add(initial);
@@ -15,53 +19,75 @@ public class State implements Comparable<State>{
 	}
 	
 	
-	//Path Constructor
+	/**
+	 * Path Constructor
+	 * 
+	 * @param oldPath		previous path
+	 * @param newNode		node to add to path
+	 * @param oldCost		previous path cost
+	 * @param extraCost		new cost to add
+	 */
 	public State(ArrayList<String> oldPath, String newNode, int oldCost, int extraCost) {
 		path = new ArrayList<String>(oldPath);
 		path.add(newNode);
 		cost = oldCost + extraCost;
-		
-		/*Testing
-		System.out.println();
-		for(int i = 0; i < path.size(); i++) {
-			System.out.print(path.get(i) + " -> ");
-		}
-		System.out.println("Cost: " + cost);
-		*/
-		
 	}
 	
 	
-	//overloading constructor for LLP, takes in a double for the load
+	/**
+	 * Overloading constructor for LLP
+	 * Takes in a double for the load
+	 * 
+	 * @param oldPath		previous path
+	 * @param newNode		node to add to path
+	 * @param leastLoad		load of link to add
+	 */
 	public State(ArrayList<String> oldPath, String newNode, double leastLoad) {
 		path = new ArrayList<String>(oldPath);
 		path.add(newNode);
 		load = leastLoad;
 	}
 	
-	//Method to get state path
+	
+	/**
+	 * 
+	 * @return path
+	 */
 	public ArrayList<String> getPath() {
 		return path;
 	}
 	
 	
-	//Method to get current location in path/graph
+	/**
+	 * 
+	 * @return the current location in the path i.e. the last node in the path
+	 */
 	public String getLastNode() {
 		return path.get(path.size() -1);
 	}
 	
 	
-	//Method to get path cost
+	/**
+	 * 
+	 * @return path cost
+	 */
 	public int getCost() {
 		return cost;
 	}
 
-	//Method to get the current load of a link in path
+	
+	/**
+	 * 
+	 * @return current load
+	 */
 	public double getLoad() {
 		return load;
 	}
 	
-	//Comparator used for priority queue
+	
+	/**
+	 * Comparator used for priority queue
+	 */
 	@Override
 	public int compareTo(State o) {
 		

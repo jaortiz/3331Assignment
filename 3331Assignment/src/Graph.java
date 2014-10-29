@@ -8,8 +8,6 @@ public class Graph {
 
 	//private ArrayList<Node> nodes;
 	private Map<String, Node> adjList; 	//Used to store the adjacency list, where each map pair has key<name,node> and each node contains edges connected to it
-	
-	//For SHP and/or SDP
 	private PriorityQueue<State> toVisit;
 	private PriorityQueue<Connection> connections;
 	private int numPackets = 0;			//total number of packets sent
@@ -18,15 +16,23 @@ public class Graph {
 	private int totalConnections = 0;	//total number of successful connections
 	private int totalPropDelay = 0;		//total propagation delay
 	
-	//Default Constructor
+	
+	/**
+	 * Default Constructor
+	 */
 	public Graph() {
-		adjList =  new HashMap<String, Node>();
+		adjList =  new HashMap<String, Node>();	
 		toVisit = new PriorityQueue<State>();
 		connections = new PriorityQueue<Connection>();
 	}
 
 	
-	//Method to add node to graph
+	/**
+	 * Method to add a node to the graph
+	 * 
+	 * @param nodeName	node to adds name
+	 * @param n			Node object to add
+	 */
 	public void addNode(String nodeName, Node n) {
 		
 		if(!adjList.containsKey(nodeName)) {	//check if the node is not already in the map
@@ -35,14 +41,28 @@ public class Graph {
 	}
 	
 	
-	//Method to add an arc to graph
+	/**
+	 * Method to add an arc/edge/link to the graph
+	 * 	
+	 * @param from			From node
+	 * @param to			To node
+	 * @param propDelay		Propagation delay of the link
+	 * @param capacity		Capacity of the link
+	 */
 	public void addArc(String from, String to, int propDelay, int capacity) {
-		adjList.get(from).addArc(to, propDelay, capacity);
+		adjList.get(from).addArc(to, propDelay, capacity);		//adding connection to both nodes
 		adjList.get(to).addArc(from, propDelay, capacity);
 	}
 	
 	
-	//Find Shortest Hop Path (Kinda Dijkstra's or BFS with priority Queue of states)
+	/**
+	 * Find Shortest Hop Path (SHP)
+	 * Uses Disjkstra's/BFS with a priority queue of states, where each connection between nodes is 1.
+	 * 
+	 * @param from		Start node
+	 * @param to		Goal node
+	 * @return			ArrayList<String> containing the SHP path
+	 */
 	public ArrayList<String> SHP(String from, String to) {
 		//toVisit = new PriorityQueue<State>();
 		toVisit.clear();
@@ -50,7 +70,8 @@ public class Graph {
 		
 		State currentState = new State(from);		//creating initial state
 		toVisit.add(currentState);
-		
+		ArrayList<Arc> successors = new ArrayList<Arc>();
+		/*
 		while(!toVisit.isEmpty() && !found) {
 			currentState = toVisit.poll();		//de-queue current state
 			Node currNode = adjList.get(currentState.getLastNode());	//get current location from current state
@@ -65,24 +86,43 @@ public class Graph {
 						currentState = newState;
 						break;
 					} else {		//otherwise add to priority queue
-						/*
-						if(!successors.get(i).isFull()) {	//check if can make connection i.e. if link is not full
-						*/
 						toVisit.add(newState);
-						
 						
 					}
 				}
 			}	
 		}
-		
-		return currentState.getPath();		//ATM just returning the shortest path
+		*/
+		while(!toVisit.isEmpty()) {
+			currentState = toVisit.poll();
+			if(currentState.getLastNode().equalsIgnoreCase(to)) {		//stop if the popped state contains the end goal
+				break;
+			}
+			
+			Node currNode = adjList.get(currentState.getLastNode());	//get current location in graph state
+			successors = currNode.getArcs();
+			
+			for(int i = 0; i < successors.size(); i ++) {
+				String nextNode = successors.get(i).getName();
+				if(!currentState.getPath().contains(nextNode)) {		//Optimisation to ensure nodes already in the path or not added
+					State newState = new State(currentState.getPath(), nextNode, currentState.getCost(),1);
+					toVisit.add(newState);
+				}
+			}	
+		}
+		return currentState.getPath();		//return the shortest hop path
 	}
 	
 	
-	//Find Shortest Delay Path (Kinda Dijkstra's or BFS with priority Queue of states)
+	/**
+	 * Find the Shortest Delay Path
+	 * Uses Disjkstra's/BFS with a priority queue of states, where each connection between nodes is the propagation delay of the link.
+	 * 
+	 * @param from	Start Node
+	 * @param to	Goal Node
+	 * @return		ArrayList<String> containing the shortest delay path
+	 */
 	public ArrayList<String> SDP(String from, String to) {
-		//toVisit = new PriorityQueue<State>();
 		toVisit.clear();
 		State currentState = new State(from);	//creating initial state
 		ArrayList<Arc> successors = new ArrayList<Arc>();
@@ -103,86 +143,121 @@ public class Graph {
 					State newState = new State(currentState.getPath(), nextNode, currentState.getCost(),successors.get(i).getPropDelay());
 					toVisit.add(newState);
 				}
-				
 			}	
 		}
 		//System.out.println("\nSDP Cost: " + currentState.getCost());
 		return currentState.getPath();
 	}
 	
-	//Find Least Loaded Path 
-		public ArrayList<String> LLP(String from, String to) {
-			//toVisit = new PriorityQueue<State>();
-			toVisit.clear();
-			Boolean found = false;
+	
+	/**
+	 * Find the Least Loaded Path
+	 * Uses Disjkstra's/BFS with a priority queue of states. Overall cost isn't additive but the least loaded path is always selected when
+	 * determining which node we should go next to.
+	 * 
+	 * @param from	Start Node
+	 * @param to	Goal Node
+	 * @return		ArrayList<String> containing the least loaded path
+	 */
+	public ArrayList<String> LLP(String from, String to) {
+		//toVisit = new PriorityQueue<State>();
+		toVisit.clear();
+		Boolean found = false;
+		ArrayList<Arc> successors = new ArrayList<Arc>();
+		State currentState = new State(from);		//creating initial state
+		toVisit.add(currentState);
+		
+		/*
+		while(!toVisit.isEmpty() && !found) {
+			currentState = toVisit.poll();		//de-queue current state
+			Node currNode = adjList.get(currentState.getLastNode());	//get current location from current state
+			ArrayList<Arc> successors = currNode.getArcs();			//get current location successors/edges/links
 			
-			State currentState = new State(from);		//creating initial state
-			toVisit.add(currentState);
-			
-			while(!toVisit.isEmpty() && !found) {
-				currentState = toVisit.poll();		//de-queue current state
-				Node currNode = adjList.get(currentState.getLastNode());	//get current location from current state
-				ArrayList<Arc> successors = currNode.getArcs();			//get current location successors/edges/links
-				
-				for(int i = 0; i < successors.size(); i ++) {
-					String nextNode = successors.get(i).getName();
-					if(!currentState.getPath().contains(nextNode)) {	//Optimisation to ensure nodes already in the path are not added again
-						State newState = new State(currentState.getPath(), nextNode, successors.get(i).getLoad());		//create new updated state
-						if(nextNode.equalsIgnoreCase(to)) {		//if the goal node has been generated stop
-							found = true;
-							currentState = newState;
-							break;
-						} else {		//otherwise add to priority queue
-							/*
-							if(!successors.get(i).isFull()) {	//check if can make connection i.e. if link is not full
-							*/
-							toVisit.add(newState);
-							
-							
-						}
+			for(int i = 0; i < successors.size(); i ++) {
+				String nextNode = successors.get(i).getName();
+				if(!currentState.getPath().contains(nextNode)) {	//Optimisation to ensure nodes already in the path are not added again
+					State newState = new State(currentState.getPath(), nextNode, successors.get(i).getLoad());		//create new updated state
+					if(nextNode.equalsIgnoreCase(to)) {		//if the goal node has been generated stop
+						found = true;
+						currentState = newState;
+						break;
+					} else {		//otherwise add to priority queue
+						toVisit.add(newState);
+						
 					}
-				}	
+				}
+			}	
+		}
+		*/
+		while(!toVisit.isEmpty()) {
+			currentState = toVisit.poll();
+			if(currentState.getLastNode().equalsIgnoreCase(to)) {		//stop if the popped state contains the end goal
+				break;
 			}
 			
-			return currentState.getPath();	
+			Node currNode = adjList.get(currentState.getLastNode());	//get current location in graph state
+			successors = currNode.getArcs();
+			
+			for(int i = 0; i < successors.size(); i ++) {
+				String nextNode = successors.get(i).getName();
+				if(!currentState.getPath().contains(nextNode)) {		//Optimisation to ensure nodes already in the path or not added
+					State newState = new State(currentState.getPath(), nextNode, successors.get(i).getLoad());		//create new updated state
+					toVisit.add(newState);
+				}
+			}	
 		}
+		//System.out.println("\nSDP Cost: " + currentState.getCost());
+		return currentState.getPath();	
+	}
 	
 	
-	//Method to create a connections for CIRCUIT
+	/**
+	 * Method used to create the connections in Circuit Switching
+	 * 
+	 * @param startNode
+	 * @param endNode
+	 * @param start
+	 * @param duration
+	 * @param networkScheme
+	 * @param routingScheme
+	 * @param packetRate
+	 */
 	public void createConnection(String startNode, String endNode, double start, double duration, String networkScheme,String routingScheme, int packetRate) {
 		if(routingScheme.equalsIgnoreCase("SHP")) {
-			ArrayList<String> path = SHP(startNode,endNode);
+			ArrayList<String> path = SHP(startNode,endNode);		//find SHP path
 			
-			numPackets += (int) Math.ceil((duration * packetRate));
+			numPackets += (int) Math.ceil((duration * packetRate));	//getting number of packets to be sent in this connection
 			
 			for(int i = 0;i < path.size() - 1;i++) {
-				if(adjList.get(path.get(i)).getArc(path.get(i + 1)).isFull()) {
-					return;
+				if(adjList.get(path.get(i)).getArc(path.get(i + 1)).isFull()) {	//checking if the path we want to go on is full
+					return;		//if full return i.e. block this connection
 				}
 			}
 	
+			//otherwise path is successful, now update the traffic on the paths
 			for(int i = 0;i < path.size() - 1;i++) {
 				adjList.get(path.get(i)).getArc(path.get(i + 1)).incrementTraffic(); 
 				adjList.get(path.get(i + 1)).getArc(path.get(i)).incrementTraffic();
 			}
 			
-			numSuccessPackets  += (int) Math.ceil((duration * packetRate));
-			connections.add(new Connection(startNode, endNode, start, duration,numPackets, path));	
+			numSuccessPackets  += (int) Math.ceil((duration * packetRate));		//adding to the number of successful packets sent
+			connections.add(new Connection(startNode, endNode, start, duration,numPackets, path));	//add the made connection to the priority queue
 			totalConnections ++;	//incrementing total successful connections
-			totalHops += path.size() - 1;
-			totalPropDelay  += getDelay(path);
+			totalHops += path.size() - 1;	//adding to the total hops
+			totalPropDelay  += getDelay(path);	//adding to the total propagation delay
 			
 		} else if(routingScheme.equalsIgnoreCase("SDP")) {
-			ArrayList<String> path = SDP(startNode,endNode);
+			ArrayList<String> path = SDP(startNode,endNode);	//find SDP path
 			
-			numPackets += (int) Math.ceil((duration * packetRate));
+			numPackets += (int) Math.ceil((duration * packetRate));	//getting number of packets to be sent in this connection
 			
 			for(int i = 0;i < path.size() - 1;i++) {
-				if(adjList.get(path.get(i)).getArc(path.get(i + 1)).isFull()) {
-					return;
+				if(adjList.get(path.get(i)).getArc(path.get(i + 1)).isFull()) {	//checking if the path we want to go on is full
+					return;		//if full return i.e. block this connection
 				}
 			}
 	
+			//otherwise path is successful, now update the traffic on the paths
 			for(int i = 0;i < path.size() - 1;i++) {
 				adjList.get(path.get(i)).getArc(path.get(i + 1)).incrementTraffic(); 
 				adjList.get(path.get(i + 1)).getArc(path.get(i)).incrementTraffic();
@@ -197,29 +272,37 @@ public class Graph {
 		} else if(routingScheme.equalsIgnoreCase("LLP")) {
 			ArrayList<String> path = LLP(startNode,endNode);
 			numPackets += (int) Math.ceil((duration * packetRate));
-			//if(!path.isEmpty()) {	//check if the end node was added/ CHECK THE LAST NODE ????
-				
-				for(int i = 0;i < path.size() - 1;i++) {
-					if(adjList.get(path.get(i)).getArc(path.get(i + 1)).isFull()) {
-						return;
-					}
+			
+			for(int i = 0;i < path.size() - 1;i++) {
+				if(adjList.get(path.get(i)).getArc(path.get(i + 1)).isFull()) {
+					return;
 				}
-				
-				for(int i = 0;i < path.size() - 1;i++) {
-					adjList.get(path.get(i)).getArc(path.get(i + 1)).incrementTraffic(); 
-					adjList.get(path.get(i + 1)).getArc(path.get(i)).incrementTraffic();
-				}
-				
-				numSuccessPackets  += (int) Math.ceil((duration * packetRate));
-				connections.add(new Connection(startNode, endNode, start, duration,numPackets, path));	
-				totalConnections ++;	//incrementing total successful connections
-				totalHops += path.size() - 1;
-				totalPropDelay  += getDelay(path);
-			//}
+			}
+			
+			for(int i = 0;i < path.size() - 1;i++) {
+				adjList.get(path.get(i)).getArc(path.get(i + 1)).incrementTraffic(); 
+				adjList.get(path.get(i + 1)).getArc(path.get(i)).incrementTraffic();
+			}
+			
+			numSuccessPackets  += (int) Math.ceil((duration * packetRate));
+			connections.add(new Connection(startNode, endNode, start, duration,numPackets, path));	
+			totalConnections ++;	//incrementing total successful connections
+			totalHops += path.size() - 1;
+			totalPropDelay  += getDelay(path);
 		}
 	}
 	
-	//overloading createConnection for PACKET SWITCHING
+	
+	/**
+	 * Method to create connections for Packet Switching
+	 * 
+	 * @param startNode
+	 * @param endNode
+	 * @param start
+	 * @param duration
+	 * @param networkScheme
+	 * @param routingScheme
+	 */
 	public void createConnection(String startNode, String endNode, double start, double duration, String networkScheme,String routingScheme) {
 		if(routingScheme.equalsIgnoreCase("SHP")) {
 			ArrayList<String> path = SHP(startNode,endNode);
@@ -269,72 +352,67 @@ public class Graph {
 			ArrayList<String> path = LLP(startNode,endNode);
 			numPackets++;	//only have to increment since each connection in packet switching is one packet
 				
-				for(int i = 0;i < path.size() - 1;i++) {
-					if(adjList.get(path.get(i)).getArc(path.get(i + 1)).isFull()) {
-						return;
-					}
+			for(int i = 0;i < path.size() - 1;i++) {
+				if(adjList.get(path.get(i)).getArc(path.get(i + 1)).isFull()) {
+					return;
 				}
-				
-				for(int i = 0;i < path.size() - 1;i++) {
-					adjList.get(path.get(i)).getArc(path.get(i + 1)).incrementTraffic(); 
-					adjList.get(path.get(i + 1)).getArc(path.get(i)).incrementTraffic();
-				}
-				
-				numSuccessPackets++; //only have to increment since each connection in packet switching is one packet
-				connections.add(new Connection(startNode, endNode, start, duration,numPackets, path));	
-				totalConnections ++;	//incrementing total successful connections
-				totalHops += path.size() - 1;
-				totalPropDelay  += getDelay(path);
-			//}
+			}
+			
+			for(int i = 0;i < path.size() - 1;i++) {
+				adjList.get(path.get(i)).getArc(path.get(i + 1)).incrementTraffic(); 
+				adjList.get(path.get(i + 1)).getArc(path.get(i)).incrementTraffic();
+			}
+			
+			numSuccessPackets++; //only have to increment since each connection in packet switching is one packet
+			connections.add(new Connection(startNode, endNode, start, duration,numPackets, path));	
+			totalConnections ++;	//incrementing total successful connections
+			totalHops += path.size() - 1;
+			totalPropDelay  += getDelay(path);
 		}
 	}
 	
 
+	/**
+	 * Method to print the graph
+	 */
 	public void print() {
-		
 		for(String key : adjList.keySet()) {
 			System.out.print("Node(" + key + "): ");
 			adjList.get(key).printArcs();
 			System.out.println();
 		}
-		
-		
-		/* Testing
-		ArrayList<Arc> test = adjList.get("A").getArcs();
-		for(int i = 0; i < test.size(); i++) {
-			System.out.println(test.get(i).getPropDelay());
-		}
-		*/
-		
 	}
 
 	
-	//method to check if a connection is done and if so update the traffic 
+	/**
+	 * Method to update a finished connection.
+	 */
 	public void updateConnections() {
-		/*ArrayList<String> tempPath;
-		for(int i = 0; i < connections.size();i++) {
-			if(connections.get(i).getEndTime() == time) {
-				tempPath = connections.get(i).getPath();
-				removeTraffic(tempPath);
-				connections.remove(i);
-			}
-		}
-		*/
-		Connection c = connections.poll();
-		removeTraffic(c.getPath());
+		Connection c = connections.poll();		//remove connection that has ended i.e. connection at front of queue
+		removeTraffic(c.getPath());				//remove the traffic that path used
 	}
 
-	//method to remove the traffic in a link when a connection is finished
+	
+	/**
+	 * Method to remove the traffic on a link used by a connection
+	 * 
+	 * @param tempPath	the path we want to remove traffic/load from
+	 */
 	private void removeTraffic(ArrayList<String> tempPath) {
 		for(int i = 0;i < tempPath.size() - 1;i++) {
-			adjList.get(tempPath.get(i)).getArc(tempPath.get(i + 1)).decrementTraffic(); 
+			adjList.get(tempPath.get(i)).getArc(tempPath.get(i + 1)).decrementTraffic(); 	//remove the traffic 
 			adjList.get(tempPath.get(i + 1)).getArc(tempPath.get(i)).decrementTraffic();
 		}
 		
 	}
 	
 	
-	//method to get the total delay for a path
+	/**
+	 * Method to get the total delay for a path
+	 * 
+	 * @param tempPath		path to get delay of
+	 * @return				total delay of the path
+	 */
 	private int getDelay(ArrayList<String> tempPath) {
 		int delay = 0;
 		for(int i = 0;i < tempPath.size() - 1;i++) {
@@ -344,14 +422,18 @@ public class Graph {
 	}
 
 	
-	//getter method to get connections
+	/**
+	 * 
+	 * @return	connections queue
+	 */
 	public PriorityQueue<Connection> getConnections() {
 		return connections;
 	}
 
 
 	/**
-	 * @return the numPackets
+	 * 
+	 * @return the number of packets
 	 */
 	public int getNumPackets() {
 		return numPackets;
@@ -359,23 +441,35 @@ public class Graph {
 
 
 	/**
-	 * @return the numSuccessPackets
+	 * 
+	 * @return the number of successfully sent packets
 	 */
 	public int getNumSuccessPackets() {
 		return numSuccessPackets;
 	}
 
 
+	/**
+	 * 
+	 * @return the total number of connections made
+	 */
 	public int getTotalConnections() {
 		return totalConnections;
 	}
 
-
+	/**
+	 * 
+	 * @return the total number of hops 
+	 */
 	public int getTotalHops() {
 		return totalHops;
 	}
 
 
+	/**
+	 * 
+	 * @return the total propagation delay
+	 */
 	public int getTotalPropDelay() {
 		return totalPropDelay;
 	}

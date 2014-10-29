@@ -153,35 +153,6 @@ public class RoutingPerformance {
 		System.out.printf("percentage of blocked packets: %.2f\n" , (double)((1 - g.getNumSuccessPackets() * 1.0/g.getNumPackets()))*100);
 		System.out.printf("average number of hops per circuit: %.2f\n" , (double)(g.getTotalHops()*1.0/g.getTotalConnections()));
 		System.out.printf("average cumulative propagation delay per circuit: %.2f\n" , (double)(g.getTotalPropDelay()*1.0/g.getTotalConnections()));
-
-		//Testing
-		//g.print();
-		/*
-		//Testing Shortest Hop Path
-		ArrayList<String> shp = g.SHP("A", "F");
-		System.out.println();
-		System.out.println("Shortest Hop Path");
-		for(int i = 0; i < shp.size(); i++) {
-			if(i == shp.size() - 1) {
-				System.out.println(shp.get(i));
-			} else {
-				System.out.print(shp.get(i) + " -> ");
-			}
-		}
-		
-		
-		//Testing Shortest Delay Path
-		ArrayList<String> sdp = g.SDP("A", "F");
-		System.out.println();
-		System.out.println("Shortest Delay Path");
-		for(int i = 0; i < sdp.size(); i++) {
-			if(i == sdp.size() - 1) {
-				System.out.println(sdp.get(i));
-			} else {
-				System.out.print(sdp.get(i) + " -> ");
-			}
-		}
-		 */
 	}
 	
 }

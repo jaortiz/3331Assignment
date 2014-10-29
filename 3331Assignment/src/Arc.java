@@ -7,7 +7,13 @@ public class Arc {
 	private int traffic = 0;
 	
 	
-	//Constructor
+	/**
+	 * Default Constructor
+	 * 
+	 * @param dest			Node to
+	 * @param pDelay		Propagation delay of this link
+	 * @param lCapacity		Link capacity
+	 */
 	public Arc(String dest, int pDelay, int lCapacity) {
 		to = dest;
 		propDelay = pDelay;
@@ -15,17 +21,29 @@ public class Arc {
 	}
 	
 	
-	//Getter Method to get Arc node name
+	/**
+	 * 
+	 * @return arc node name
+	 */
 	public String getName() {
 		return to;
 	}
 	
 	
-	//Getter method to get propagation delay of edge/arc/link
+	/**
+	 * 
+	 * @return propagation delay of this link
+	 */
 	public int getPropDelay() {
 		return propDelay;
 	}
 	
+	
+	/**
+	 * Method to check whether or not the link is at full capacity
+	 * 
+	 * @return	
+	 */
 	public boolean isFull() {
 		boolean full = false;
 		
@@ -37,17 +55,26 @@ public class Arc {
 	}
 
 
-	//increments the traffic on the link
+	/**
+	 * Increment the traffic on this link
+	 */
 	public void incrementTraffic() {
 		traffic++;
 	}
 	
-	//increments the traffic on the link
+
+	/**
+	 * Decrement the traffic on this link
+	 */
 	public void decrementTraffic() {
 		traffic--;
 	}
 	
-	//method to get the current load on the link
+	
+	/**
+	 * 
+	 * @return	current load of the link
+	 */
 	public double getLoad() {
 		return ((double)traffic /(double)linkCapacity); 
 	}

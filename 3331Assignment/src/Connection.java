@@ -11,7 +11,17 @@ public class Connection implements Comparable<Connection>{
 	int numPackets;
 	boolean packetNetwork = false;
 	
-	//Connection constructor
+
+	/**
+	 * Default Constructor
+	 * 
+	 * @param start			Start node
+	 * @param end			End node
+	 * @param startTime		Start time of the connection
+	 * @param duration		Duration of the connection
+	 * @param numPackets	Number of packets being sent in this connection
+	 * @param path			Path that the connection is going to take
+	 */
 	Connection(String start, String end, double startTime, double duration, int numPackets, ArrayList<String> path) {
 		this.start = start;
 		this.end = end;
@@ -24,7 +34,14 @@ public class Connection implements Comparable<Connection>{
 	}
 	
 	
-	//Connection constructor for PACKET switching
+	/**
+	 * Overloading constructor for Packet Switching
+	 * 
+	 * @param start			Start Node
+	 * @param end			End Node
+	 * @param startTime		Start time of the connection
+	 * @param endTime		End time of the connection
+	 */
 	Connection(String start, String end, double startTime, double endTime) {
 		this.start = start;
 		this.end = end;
@@ -33,38 +50,62 @@ public class Connection implements Comparable<Connection>{
 		packetNetwork = true;
 	}
 	
-	//method to return the end time of the connection
+	
+	/**
+	 * 
+	 * @return the end time of the connection
+	 */
 	public double getEndTime() {
 		return endTime;
 		//return startTime + duration;
 	}
 	
-	//getter method to get path
+	
+	/**
+	 * 
+	 * @return the path used by this connection
+	 */
 	public ArrayList<String> getPath() {
 		return path;
 	}
 
-	//method to return start time
+	
+	/**
+	 * 
+	 * @return Start time of this connection
+	 */
 	public double getStartTime() {
 		return startTime;
 	}
 
-	//method to return start node
+	
+	/**
+	 * 
+	 * @return Starting node of this connection
+	 */
 	public String getStartNode() {
 		return start;
 	}
 	
-	//method to return start node
+	
+	/**
+	 * 
+	 * @return End node of this connection
+	 */
 	public String getEndNode() {
 		return end;
 	}
 	
+	
+	/**
+	 * Comparator used for priority queue
+	 */
 	@Override
 	public int compareTo(Connection o) {
 		if(packetNetwork) {	
-			return (int) (this.startTime - o.getStartTime());	//used in packetSwitching
+			return (int) (this.startTime - o.getStartTime());	//used in Packet Switching
 		}
-		return (int) (this.getEndTime() - o.getEndTime());
+		return (int) (this.getEndTime() - o.getEndTime());		//used in Circuit Switching
 		
 	}
 	
