@@ -102,12 +102,9 @@ public class Connection implements Comparable<Connection>{
 	 */
 	@Override
 	public int compareTo(Connection o) {
-		if(packetNetwork) {	
-			return (int) (this.startTime - o.getStartTime());	//used in Packet Switching
-		}
-		return (int) (this.getEndTime() - o.getEndTime());		//used in Circuit Switching
-		
+		if(this.endTime < o.getEndTime()) return -1;
+		if(this.endTime > o.getEndTime()) return 1;
+		return 0;
 	}
-	
 	
 }

@@ -6,6 +6,7 @@ public class State implements Comparable<State>{
 	ArrayList<String> path;
 	int cost;
 	double load = 0.0;
+	boolean LLP = false;
 	
 	/**
 	 * Default constructor
@@ -42,12 +43,16 @@ public class State implements Comparable<State>{
 	 * @param newNode		node to add to path
 	 * @param leastLoad		load of link to add
 	 */
-	public State(ArrayList<String> oldPath, String newNode, double leastLoad) {
+	public State(ArrayList<String> oldPath, String newNode) {//, double leastLoad) {
 		path = new ArrayList<String>(oldPath);
 		path.add(newNode);
-		load = leastLoad;
+		LLP = true;
+		//load = leastLoad;
 	}
 	
+	public void setLoad(double maxLoad) {
+		load = maxLoad;
+	}
 	
 	/**
 	 * 
@@ -91,7 +96,8 @@ public class State implements Comparable<State>{
 	@Override
 	public int compareTo(State o) {
 		
-		if(load != 0.0) {	//used to compare doubles for LLP 
+		//if(load != 0.0) {	//used to compare doubles for LLP
+		if(LLP) {
 			if(load < o.getLoad()) return -1;
 			if(load > o.getLoad()) return 1;
 			return 0;

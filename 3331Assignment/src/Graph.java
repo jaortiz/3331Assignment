@@ -15,7 +15,8 @@ public class Graph {
 	private int totalHops = 0;			//total number of hops
 	private int totalConnections = 0;	//total number of successful connections
 	private int totalPropDelay = 0;		//total propagation delay
-	
+	int totalLoad = 0;
+	int cumulativeLoad = 0;
 	
 	/**
 	 * Default Constructor
@@ -71,28 +72,6 @@ public class Graph {
 		State currentState = new State(from);		//creating initial state
 		toVisit.add(currentState);
 		ArrayList<Arc> successors = new ArrayList<Arc>();
-		/*
-		while(!toVisit.isEmpty() && !found) {
-			currentState = toVisit.poll();		//de-queue current state
-			Node currNode = adjList.get(currentState.getLastNode());	//get current location from current state
-			ArrayList<Arc> successors = currNode.getArcs();			//get current location successors/edges/links
-			
-			for(int i = 0; i < successors.size(); i ++) {
-				String nextNode = successors.get(i).getName();
-				if(!currentState.getPath().contains(nextNode)) {	//Optimisation to ensure nodes already in the path are not added again
-					State newState = new State(currentState.getPath(), nextNode, currentState.getCost(),1);		//create new updated state
-					if(nextNode.equalsIgnoreCase(to)) {		//if the goal node has been generated stop
-						found = true;
-						currentState = newState;
-						break;
-					} else {		//otherwise add to priority queue
-						toVisit.add(newState);
-						
-					}
-				}
-			}	
-		}
-		*/
 		while(!toVisit.isEmpty()) {
 			currentState = toVisit.poll();
 			if(currentState.getLastNode().equalsIgnoreCase(to)) {		//stop if the popped state contains the end goal
@@ -166,29 +145,7 @@ public class Graph {
 		ArrayList<Arc> successors = new ArrayList<Arc>();
 		State currentState = new State(from);		//creating initial state
 		toVisit.add(currentState);
-		
-		/*
-		while(!toVisit.isEmpty() && !found) {
-			currentState = toVisit.poll();		//de-queue current state
-			Node currNode = adjList.get(currentState.getLastNode());	//get current location from current state
-			ArrayList<Arc> successors = currNode.getArcs();			//get current location successors/edges/links
-			
-			for(int i = 0; i < successors.size(); i ++) {
-				String nextNode = successors.get(i).getName();
-				if(!currentState.getPath().contains(nextNode)) {	//Optimisation to ensure nodes already in the path are not added again
-					State newState = new State(currentState.getPath(), nextNode, successors.get(i).getLoad());		//create new updated state
-					if(nextNode.equalsIgnoreCase(to)) {		//if the goal node has been generated stop
-						found = true;
-						currentState = newState;
-						break;
-					} else {		//otherwise add to priority queue
-						toVisit.add(newState);
-						
-					}
-				}
-			}	
-		}
-		*/
+		boolean maxSet = false;
 		while(!toVisit.isEmpty()) {
 			currentState = toVisit.poll();
 			if(currentState.getLastNode().equalsIgnoreCase(to)) {		//stop if the popped state contains the end goal
@@ -201,8 +158,10 @@ public class Graph {
 			for(int i = 0; i < successors.size(); i ++) {
 				String nextNode = successors.get(i).getName();
 				if(!currentState.getPath().contains(nextNode)) {		//Optimisation to ensure nodes already in the path or not added
-					State newState = new State(currentState.getPath(), nextNode, successors.get(i).getLoad());		//create new updated state
-					toVisit.add(newState);
+					State newState = new State(currentState.getPath(), nextNode);		//create new updated state
+					double maxLoad = getMax(newState.getPath());	//find the maximum load on a path
+					newState.setLoad(maxLoad);	//add the maximum load to the state
+					toVisit.add(newState);		//add to priority queue
 				}
 			}	
 		}
@@ -211,6 +170,25 @@ public class Graph {
 	}
 	
 	
+	/**
+	 * Finds the maximum load/traffic on a given path i.e. the maximum load on any given link
+	 * 
+	 * @param path
+	 * @return
+	 */
+	private double getMax(ArrayList<String> path) {
+		double max = 0.0;
+		
+		for(int i = 0; i < path.size() - 1;i++) {
+			if(adjList.get(path.get(i)).getArc(path.get(i + 1)).getLoad() > max) {
+				max  = adjList.get(path.get(i)).getArc(path.get(i + 1)).getLoad();
+			}
+		}
+		
+		return max;
+	}
+
+
 	/**
 	 * Method used to create the connections in Circuit Switching
 	 * 
@@ -311,6 +289,8 @@ public class Graph {
 			
 			for(int i = 0;i < path.size() - 1;i++) {
 				if(adjList.get(path.get(i)).getArc(path.get(i + 1)).isFull()) {
+					//System.out.println("start = " + startNode + " end = " + endNode + " starting at " + start);
+					//System.out.println("wtf");
 					return;
 				}
 			}
@@ -318,10 +298,11 @@ public class Graph {
 			for(int i = 0;i < path.size() - 1;i++) {
 				adjList.get(path.get(i)).getArc(path.get(i + 1)).incrementTraffic(); 
 				adjList.get(path.get(i + 1)).getArc(path.get(i)).incrementTraffic();
+				totalLoad++;
 			}
 			
 			numSuccessPackets++; //only have to increment since each connection in packet switching is one packet
-			connections.add(new Connection(startNode, endNode, start, duration,numPackets, path));	
+			connections.add(new Connection(startNode, endNode, start, duration,1, path));	
 			totalConnections ++;	//incrementing total successful connections
 			totalHops += path.size() - 1;
 			totalPropDelay  += getDelay(path);
@@ -340,10 +321,11 @@ public class Graph {
 			for(int i = 0;i < path.size() - 1;i++) {
 				adjList.get(path.get(i)).getArc(path.get(i + 1)).incrementTraffic(); 
 				adjList.get(path.get(i + 1)).getArc(path.get(i)).incrementTraffic();
+				totalLoad++;
 			}
 			
 			numSuccessPackets++; //only have to increment since each connection in packet switching is one packet
-			connections.add(new Connection(startNode, endNode, start, duration,numPackets, path));	
+			connections.add(new Connection(startNode, endNode, start, duration,1, path));	
 			totalConnections ++;	//incrementing total successful connections
 			totalHops += path.size() - 1;
 			totalPropDelay  += getDelay(path);
@@ -354,6 +336,8 @@ public class Graph {
 				
 			for(int i = 0;i < path.size() - 1;i++) {
 				if(adjList.get(path.get(i)).getArc(path.get(i + 1)).isFull()) {
+					//System.out.println("start = " + startNode + " end = " + endNode + " starting at " + start);
+					//System.out.println("wtf");
 					return;
 				}
 			}
@@ -361,14 +345,16 @@ public class Graph {
 			for(int i = 0;i < path.size() - 1;i++) {
 				adjList.get(path.get(i)).getArc(path.get(i + 1)).incrementTraffic(); 
 				adjList.get(path.get(i + 1)).getArc(path.get(i)).incrementTraffic();
+				totalLoad++;
 			}
 			
 			numSuccessPackets++; //only have to increment since each connection in packet switching is one packet
-			connections.add(new Connection(startNode, endNode, start, duration,numPackets, path));	
+			connections.add(new Connection(startNode, endNode, start, duration,1, path));	
 			totalConnections ++;	//incrementing total successful connections
 			totalHops += path.size() - 1;
 			totalPropDelay  += getDelay(path);
 		}
+		cumulativeLoad += totalLoad;
 	}
 	
 
@@ -402,6 +388,7 @@ public class Graph {
 		for(int i = 0;i < tempPath.size() - 1;i++) {
 			adjList.get(tempPath.get(i)).getArc(tempPath.get(i + 1)).decrementTraffic(); 	//remove the traffic 
 			adjList.get(tempPath.get(i + 1)).getArc(tempPath.get(i)).decrementTraffic();
+			totalLoad--;
 		}
 		
 	}
@@ -475,6 +462,13 @@ public class Graph {
 	}
 
 
+	/**
+	 * @return the totalLoad
+	 */
+	public double getAvgTotalLoad() {
+		return 1.0*cumulativeLoad/totalConnections;
+	}
 
+	
 	
 }

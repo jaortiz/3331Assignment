@@ -62,8 +62,10 @@ public class Node {
 		for(int i = 0; i < arcs.size(); i ++) {
 			if(i == arcs.size() - 1) {
 				System.out.print(arcs.get(i).getName());
+				System.out.print("load = " + arcs.get(i).getLoad());
 			} else {
 				System.out.print(arcs.get(i).getName() + " -> ");
+				System.out.print("load = "+ arcs.get(i).getLoad() + " -> ");
 			}
 		}
 	}

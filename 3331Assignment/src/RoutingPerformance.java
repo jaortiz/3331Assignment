@@ -2,12 +2,15 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.PriorityQueue;
 import java.util.Scanner;
-
+/**
+ * 
+ * @author Jeremy Ortiz (z3461601) and Marin Tomicic (z3459560)
+ *
+ */
 public class RoutingPerformance {
 	public static void main(String[] args) {
 		//Arguments: Circuit/Packet [0], SHP/SDP/LLP [1], topology.txt [2], workload.txt [3] packetRate
 		
-		//
 		Scanner topologySC = null;
 		Scanner workSC = null;
 		String str;
@@ -16,7 +19,6 @@ public class RoutingPerformance {
 		String line;
 		String[] work;
 		double start = 0.0, duration = 0.0;
-		int blocked = 0;
 		
 		
 		Graph g = new Graph();
@@ -68,7 +70,6 @@ public class RoutingPerformance {
 		} 
 	
 	
-		//int time = 0;
 		int virtualCircuitRequests = 0;
 		
 		//reading in workload line by line
@@ -95,7 +96,7 @@ public class RoutingPerformance {
 			}
 		} else if(networkScheme.equalsIgnoreCase("PACKET")) {
 			double packetIncrem = 1.0/packetRate;	//number to increment each packet by
-			PriorityQueue<Connection> tempConnections = new PriorityQueue<Connection>();
+			PriorityQueue<PacketConnection> tempConnections = new PriorityQueue<PacketConnection>();
 
 			//adding all the packets to a priority queue based on start time
 			while(workSC.hasNext()) {
@@ -111,10 +112,10 @@ public class RoutingPerformance {
 				
 				for(int i = 0; i < numPackets;i++ ) {
 					if(i == (numPackets - 1)) {	//for last packet, end time = start + duration
-						tempConnections.add(new Connection(node1, node2, (start + i*packetIncrem), (start + duration)));
+						tempConnections.add(new PacketConnection(node1, node2, (start + i*packetIncrem), (start + duration)));
 						virtualCircuitRequests++;
 					} else {
-						tempConnections.add(new Connection(node1, node2, (start + i*packetIncrem), ((i+1)*packetIncrem + start)));
+						tempConnections.add(new PacketConnection(node1, node2, (start + i*packetIncrem), ((i+1)*packetIncrem + start)));
 						virtualCircuitRequests++;
 					}
 					
@@ -125,6 +126,7 @@ public class RoutingPerformance {
 			while(!tempConnections.isEmpty()) {
 				//if the connection with the earliest end time is less than or equal to the connection we want to add with the earliest start time
 				while(!g.getConnections().isEmpty() && g.getConnections().peek().getEndTime() <=  tempConnections.peek().getStartTime()){	
+					//System.out.println("removing " + g.getConnections().peek().toString());
 					g.updateConnections();
 				}
 				
@@ -134,7 +136,6 @@ public class RoutingPerformance {
 				double tempDuration = tempConnections.peek().getEndTime() - tempConnections.peek().getStartTime();
 				tempConnections.poll();//remove connection we are about to send from tempQueue
 				g.createConnection(startNode,endNode,startTime,tempDuration,networkScheme,routingScheme);
-				//createConnection(String startNode, String endNode, double start, double duration, String networkScheme,String routingScheme)
 				
 			}
 			
@@ -142,7 +143,6 @@ public class RoutingPerformance {
 				g.updateConnections();				//the last packet is sent
 			}
 		}
-		
 		
 		//Printing out statistics
 		System.out.println("total number of virtual circuit requests: " + virtualCircuitRequests);
